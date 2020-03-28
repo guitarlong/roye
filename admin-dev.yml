@@ -1,0 +1,153 @@
+server:
+  port: 8181
+spring:
+  datasource:
+    name : druidDataSource
+    type : com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost/ehr_admin?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true
+      username: root
+      password: root
+      filters: stat,wall,log4j,config  #配置监控统计拦截的filters,去掉后监控界面sql无法进行统计，wall用于防火墙
+      max-active: 100  #最大连接数
+      initial-size: 1  #初始化大小
+      max-wait: 60000  #获取连接等待超时时间
+      min-idle: 1      #最小连接数
+      time-between-eviction-runs-millis: 60000  #间隔多久才进行一次检测，检查需要关闭的空闲连接，单位是毫秒
+      min-evictable-idle-time-millis: 300000    #一个连接在池中最小生存的时间，单位是毫秒
+      validation-query: select 'x'
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-open-prepared-statements: 50
+      max-pool-prepared-statement-per-connection-size: 20
+      # WebStatFilter配置，说明请参考Druid Wiki，配置_配置WebStatFilter
+      # 是否启用StatFilter默认值true
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+        session-stat-enable: false
+        session-stat-max-count: 1000
+        principal-cookie-name: admin
+        principal-session-name: admin
+        profile-enable: true
+      stat-view-servlet:
+        url-pattern: /druid/*  # 监控页面访问路径
+        # 允许清空统计数据
+        reset-enable: true
+        login-username: roye
+        login-password: 123456
+        # StatViewSerlvet展示出来的监控信息比较敏感，是系统运行的内部情况，如果你需要做访问控制，可以配置allow和deny这两个参数
+        # deny优先于allow，如果在deny列表中，就算在allow列表中，也会被拒绝。如果allow没有配置或者为空，则允许所有访问
+        # 配置的格式
+          # <IP>
+          # 或者<IP>/<SUB_NET_MASK_size>其中128.242.127.1/24
+          # 24表示，前面24位是子网掩码，比对的时候，前面24位相同就匹配,不支持IPV6。
+        allow:
+        deny:
+  boot:  #系统服务监控
+    admin:
+      client:
+        url: "http://127.0.0.1:8100"
+  #zipkin
+  zipkin:
+    base-url: http://127.0.0.1:9411
+  sleuth:
+    sampler:
+      probability: 1  #样本采集量，默认为0.1
+  cloud: 
+    consul: 
+      host: 127.0.0.1
+      port: 8500
+      discovery:
+        service-name: ${spring.application.name}  #注册到consul的服务器名称
+  thymeleaf:
+    cache: false
+  devtools:
+    restart:
+      enabled: true
+  redis:
+    # redis数据库索引（默认为0），我们使用索引为3的数据库，避免和其他数据库冲突
+    database: 0
+    # redis服务器地址（默认为localhost）
+    host: 127.0.0.1
+    # redis端口（默认为6379）
+    port: 6379
+    # redis访问密码（默认为空）
+    password: 123456
+    # redis连接超时时间（单位为毫秒）
+    timeout: 1000
+    # redis连接池配置
+    jedis:
+      pool:
+        # 最大可用连接数（默认为8，负数表示无限）
+        max-active: 8
+        # 最大空闲连接数（默认为8，负数表示无限）
+        max-idle: 8
+        # 最小空闲连接数（默认为0，该值只有为正数才有作用）
+        min-idle: 0
+        # 从连接池中获取连接最大等待时间（默认为-1，单位为毫秒，负数表示无限）
+        max-wait: -1
+  session:
+    store-type: redis   #设置session保存为默认redis的方式
+  security:
+    user:
+      name: roye
+      password: 123456
+  #profiles:
+  #  active: dev
+  #  main:
+  #    allow-bean-definition-overriding: true #当遇到相同名字的时候，是否允许覆盖
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+  main:
+    allow-bean-definition-overriding: true #当遇到相同名字的时候，是否允许覆盖
+
+#开放健康检查接口        
+management: 
+  endpoints:
+    web:
+      exposure:
+        include: "*"  #监控开放接口“*”代表全部
+  
+#mybatis-plus
+mybatis-plus:
+  # xml扫描，多个目录用逗号或者分号分隔（告诉 Mapper 所对应的 XML 文件位置）
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.roye.ehr.admin.model
+  global-config:
+    db-config:
+      #主键类型 AUTO:"数据库ID自增" INPUT:"用户输入ID",ID_WORKER:"全局唯一ID (数字类型唯一ID)", UUID:"全局唯一ID UUID";
+      id-type: auto
+  configuration:
+    # 是否开启自动驼峰命名规则映射:从数据库列名到Java属性驼峰命名的类似映射
+    map-underscore-to-camel-case: true
+    # 如果查询结果中包含空值的列，则 MyBatis 在映射的时候，不会映射这个字段
+    call-setters-on-nulls: true
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#pagehelper 分页控件
+pagehelper:
+    helperDialect: mysql
+    reasonable: true
+    support-methods-arguments: true
+    params: count=countSql
+#ribbon 负载均衡策略配置 随机策略
+ehr-admin:
+  ribbon:
+    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+    
+#断熔器
+feign:
+  hystrix:
+    enabled: true
+    
+turbine:
+  instanceUrlSuffix: /hystrix.stream  #没有的话会出现异常
+      
